@@ -10,19 +10,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type ProjectModule struct {
+type projectModule struct {
 	projectHandler handler.ProjectHandler
 	r              *gin.Engine
 }
 
-var projectInstance *ProjectModule
+var projectInstance *projectModule
 
 func InitProjectModule(r *gin.Engine, db *gorm.DB) {
 	projectRepository := repository.NewProjectRepository(db)
 	userRepository := userRepo.NewUserRepository(db)
 	projectService := service.NewProjectService(projectRepository, userRepository)
 	projectHandler := handler.NewProjectHandler(projectService)
-	projectInstance = &ProjectModule{
+	projectInstance = &projectModule{
 		projectHandler: projectHandler,
 		r:              r,
 	}
@@ -30,4 +30,7 @@ func InitProjectModule(r *gin.Engine, db *gorm.DB) {
 
 func RegisterPublicProjectRoutes() {
 	routes.RegisterPublicProjectRoutes(projectInstance.r, projectInstance.projectHandler)
+}
+func RegisterPrivateProjectRoutes(r *gin.Engine) {
+	routes.RegisterPrivateProjectRoutes(r, projectInstance.projectHandler)
 }

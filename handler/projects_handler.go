@@ -15,7 +15,7 @@ type ProjectHandler interface {
 	GetUserProjects(c *gin.Context)
 	CreateProject(c *gin.Context)
 	GetProject(c *gin.Context)
-	ToggleLikeProject(c *gin.Context)
+	// ToggleLikeProject(c *gin.Context)
 	// UpdateProject(c *gin.Context)
 	// DeleteProject(c *gin.Context)
 }

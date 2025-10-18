@@ -13,3 +13,11 @@ func RegisterPublicProjectRoutes(r *gin.Engine, projectHandler handler.ProjectHa
 
 	}
 }
+func RegisterPrivateProjectRoutes(r *gin.Engine, projectHandler handler.ProjectHandler) {
+	privateProjectRoutes := r.Group("/api/projects")
+	{
+		privateProjectRoutes.POST("", projectHandler.CreateProject)
+		// privateProjectRoutes.PUT("/:id", projectHandler.UpdateProject)
+		// privateProjectRoutes.DELETE("/:id", projectHandler.DeleteProject)
+	}
+}
