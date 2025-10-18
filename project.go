@@ -17,6 +17,15 @@ type projectModule struct {
 
 var projectInstance *projectModule
 
+// InitProjectModule initializes the project module with the provided Gin engine and GORM database.
+//
+// It creates instances of repositories, services, and handlers, and sets up the module instance.
+//
+// Params:
+//   - r: *gin.Engine - The Gin engine to register routes on.
+//
+// - db: *gorm.DB - The GORM database connection.
+
 func InitProjectModule(r *gin.Engine, db *gorm.DB) {
 	projectRepository := repository.NewProjectRepository(db)
 	userRepository := userRepo.NewUserRepository(db)
@@ -28,9 +37,22 @@ func InitProjectModule(r *gin.Engine, db *gorm.DB) {
 	}
 }
 
+// RegisterPublicProjectRoutes registers the public project routes with the Gin engine.
+//
+// It sets up the routes that are accessible without authentication.
+
 func RegisterPublicProjectRoutes() {
 	routes.RegisterPublicProjectRoutes(projectInstance.r, projectInstance.projectHandler)
 }
+
+// RegisterPrivateProjectRoutes registers the private project routes with the Gin engine.
+//
+// It sets up the routes that require authentication.
+//
+// Params:
+// - r: *gin.Engine - The Gin engine to register routes on.
+//
+// Note: Only Use this after enabling jwt middleware on the routes.
 func RegisterPrivateProjectRoutes(r *gin.Engine) {
 	routes.RegisterPrivateProjectRoutes(r, projectInstance.projectHandler)
 }
