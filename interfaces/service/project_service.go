@@ -20,4 +20,24 @@ type ProjectService interface {
 	GetReviews(projectID uint, limit, offset int) ([]dto.ReviewResponse, error)
 	DeleteComment(commentID uint, username string, isAdmin bool) error
 	ModerateComment(commentID uint, status string) error
+	// Trending & Recommendations
+	GetTrendingProjects(limit, offset int, days int) ([]dto.TrendingProject, error)
+	GetRecommendedProjects(username string, limit, offset int) ([]dto.RecommendedProject, error)
+	GetSimilarProjects(projectID uint, limit, offset int) ([]dto.SimilarProject, error)
+	// Analytics
+	GetProjectAnalytics(projectID uint, username string, days int) (*dto.ProjectAnalytics, error)
+	GetPlatformAnalytics(days int) (*dto.PlatformAnalytics, error)
+	// Templates
+	CreateTemplate(username string, template dto.TemplateCreate) (*dto.ProjectTemplate, error)
+	GetTemplates(limit, offset int, isPublic bool) ([]dto.TemplateListItem, error)
+	GetUserTemplates(username string, limit, offset int) ([]dto.TemplateListItem, error)
+	GetTemplate(templateID uint) (*dto.ProjectTemplate, error)
+	DeleteTemplate(templateID uint, username string) error
+	CreateProjectFromTemplate(username string, request dto.CreateFromTemplate) (*dto.ProjectResponse, error)
+	// Notifications
+	GetNotifications(username string, limit, offset int) ([]dto.NotificationResponse, error)
+	MarkNotificationAsRead(notificationID uint, username string) error
+	MarkAllAsRead(username string) error
+	DeleteNotification(notificationID uint, username string) error
+	CreateNotification(userID uint, notification dto.NotificationCreate) error
 }

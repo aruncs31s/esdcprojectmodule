@@ -31,6 +31,22 @@ type ProjectRepositoryReader interface {
 	GetProjectStats(projectID uint) (*model.ProjectStats, error)
 	GetComments(projectID uint, limit, offset int) ([]model.Comment, error)
 	GetReviews(projectID uint, limit, offset int) ([]model.Review, error)
+	// Trending & Recommendations
+	GetTrendingProjects(limit, offset int, days int) ([]model.Project, error)
+	GetRecommendedProjects(userID uint, limit, offset int) ([]model.Project, error)
+	GetSimilarProjects(projectID uint, limit, offset int) ([]model.Project, error)
+	// Analytics
+	GetProjectAnalytics(projectID uint, days int) (*model.ProjectAnalytics, error)
+	GetPlatformAnalytics(days int) (*model.PlatformAnalytics, error)
+	GetTrendingTechnologies(limit int) ([]model.TrendingTech, error)
+	GetTrendingTags(limit int) ([]model.TrendingTag, error)
+	// Templates
+	GetTemplateByID(templateID uint) (*model.ProjectTemplate, error)
+	GetUserTemplates(userID uint, limit, offset int) ([]model.ProjectTemplate, error)
+	GetPublicTemplates(limit, offset int) ([]model.ProjectTemplate, error)
+	// Notifications
+	GetUserNotifications(userID uint, limit, offset int) ([]model.Notification, error)
+	GetUnreadNotificationCount(userID uint) (int, error)
 }
 type ProjectRepositoryMixed interface {
 	// FindOrCreateTag finds a tag by name or creates it if it doesn't exist.
@@ -63,4 +79,13 @@ type ProjectRepositoryWriter interface {
 	CreateReview(review *model.Review) error
 	DeleteComment(commentID uint) error
 	UpdateCommentStatus(commentID uint, status string) error
+	// Templates
+	CreateTemplate(template *model.ProjectTemplate) error
+	DeleteTemplate(templateID uint) error
+	IncrementTemplateUsage(templateID uint) error
+	// Notifications
+	CreateNotification(notification *model.Notification) error
+	MarkNotificationAsRead(notificationID uint) error
+	MarkAllNotificationsAsRead(userID uint) error
+	DeleteNotification(notificationID uint) error
 }

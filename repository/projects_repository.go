@@ -347,3 +347,85 @@ func (r *projectRepositoryReader) GetEssentialInfo(limit, offset int) (*[]common
 	err := r.db.Limit(limit).Offset(offset).Find(&projects).Error
 	return &projects, err
 }
+
+// ========== DELEGATION METHODS FOR TRENDING/RECOMMENDATIONS/ANALYTICS ==========
+
+func (r *projectRepository) GetTrendingProjects(limit, offset int, days int) ([]commonModules.Project, error) {
+	return r.reader.GetTrendingProjects(limit, offset, days)
+}
+
+func (r *projectRepository) GetRecommendedProjects(userID uint, limit, offset int) ([]commonModules.Project, error) {
+	return r.reader.GetRecommendedProjects(userID, limit, offset)
+}
+
+func (r *projectRepository) GetSimilarProjects(projectID uint, limit, offset int) ([]commonModules.Project, error) {
+	return r.reader.GetSimilarProjects(projectID, limit, offset)
+}
+
+func (r *projectRepository) GetProjectAnalytics(projectID uint, days int) (*commonModules.ProjectStats, error) {
+	return r.reader.GetProjectAnalytics(projectID, days)
+}
+
+func (r *projectRepository) GetPlatformAnalytics(days int) (*commonModules.PlatformAnalytics, error) {
+	return r.reader.GetPlatformAnalytics(days)
+}
+
+func (r *projectRepository) GetTrendingTechnologies(limit int) ([]commonModules.TrendingTech, error) {
+	return r.reader.GetTrendingTechnologies(limit)
+}
+
+func (r *projectRepository) GetTrendingTags(limit int) ([]commonModules.TrendingTag, error) {
+	return r.reader.GetTrendingTags(limit)
+}
+
+// ========== DELEGATION METHODS FOR TEMPLATES ==========
+
+func (r *projectRepository) GetTemplateByID(templateID uint) (*commonModules.ProjectTemplate, error) {
+	return r.reader.GetTemplateByID(templateID)
+}
+
+func (r *projectRepository) GetUserTemplates(userID uint, limit, offset int) ([]commonModules.ProjectTemplate, error) {
+	return r.reader.GetUserTemplates(userID, limit, offset)
+}
+
+func (r *projectRepository) GetPublicTemplates(limit, offset int) ([]commonModules.ProjectTemplate, error) {
+	return r.reader.GetPublicTemplates(limit, offset)
+}
+
+func (r *projectRepository) CreateTemplate(template *commonModules.ProjectTemplate) error {
+	return r.writer.CreateTemplate(template)
+}
+
+func (r *projectRepository) DeleteTemplate(templateID uint) error {
+	return r.writer.DeleteTemplate(templateID)
+}
+
+func (r *projectRepository) IncrementTemplateUsage(templateID uint) error {
+	return r.writer.IncrementTemplateUsage(templateID)
+}
+
+// ========== DELEGATION METHODS FOR NOTIFICATIONS ==========
+
+func (r *projectRepository) GetUserNotifications(userID uint, limit, offset int) ([]commonModules.Notification, error) {
+	return r.reader.GetUserNotifications(userID, limit, offset)
+}
+
+func (r *projectRepository) GetUnreadNotificationCount(userID uint) (int, error) {
+	return r.reader.GetUnreadNotificationCount(userID)
+}
+
+func (r *projectRepository) CreateNotification(notification *commonModules.Notification) error {
+	return r.writer.CreateNotification(notification)
+}
+
+func (r *projectRepository) MarkNotificationAsRead(notificationID uint) error {
+	return r.writer.MarkNotificationAsRead(notificationID)
+}
+
+func (r *projectRepository) MarkAllNotificationsAsRead(userID uint) error {
+	return r.writer.MarkAllNotificationsAsRead(userID)
+}
+
+func (r *projectRepository) DeleteNotification(notificationID uint) error {
+	return r.writer.DeleteNotification(notificationID)
+}

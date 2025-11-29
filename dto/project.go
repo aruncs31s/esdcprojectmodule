@@ -101,3 +101,240 @@ type ProjectsEssentialInfo struct {
 	CreatedAt  string `json:"created_at"`
 	UpdatedAt  string `json:"updated_at"`
 }
+
+// ========== TRENDING & RECOMMENDATIONS ==========
+
+type TrendingProject struct {
+	ID             uint        `json:"id"`
+	Title          string      `json:"title"`
+	Image          *string     `json:"image"`
+	Category       string      `json:"category"`
+	Likes          int         `json:"likes"`
+	Views          int         `json:"views"`
+	CommentCount   int         `json:"comment_count"`
+	TrendingScore  float64     `json:"trending_score"`
+	CreatorDetails Contributor `json:"creator_details,omitempty"`
+}
+
+type RecommendedProject struct {
+	ID               uint          `json:"id"`
+	Title            string        `json:"title"`
+	Description      string        `json:"description"`
+	Image            *string       `json:"image"`
+	Category         string        `json:"category"`
+	Likes            int           `json:"likes"`
+	TechnologiesUsed *[]Technology `json:"technologies_used,omitempty"`
+	CreatorDetails   Contributor   `json:"creator_details,omitempty"`
+	MatchScore       float64       `json:"match_score"`
+	RecommendReason  string        `json:"recommend_reason"`
+}
+
+type SimilarProject struct {
+	ID              uint        `json:"id"`
+	Title           string      `json:"title"`
+	Description     string      `json:"description"`
+	Image           *string     `json:"image"`
+	Category        string      `json:"category"`
+	Likes           int         `json:"likes"`
+	SimilarityScore float64     `json:"similarity_score"`
+	CommonTags      []string    `json:"common_tags"`
+	CreatorDetails  Contributor `json:"creator_details,omitempty"`
+}
+
+// ========== ANALYTICS ==========
+
+type ProjectAnalytics struct {
+	ProjectID           uint          `json:"project_id"`
+	Title               string        `json:"title"`
+	TotalViews          int           `json:"total_views"`
+	TotalLikes          int           `json:"total_likes"`
+	TotalComments       int           `json:"total_comments"`
+	AverageRating       float64       `json:"average_rating"`
+	ViewsTrend          []DailyMetric `json:"views_trend"`
+	LikesTrend          []DailyMetric `json:"likes_trend"`
+	PopularTechnologies []TechMetric  `json:"popular_technologies"`
+	CreatedAt           time.Time     `json:"created_at"`
+	UpdatedAt           time.Time     `json:"updated_at"`
+}
+
+type DailyMetric struct {
+	Date   time.Time `json:"date"`
+	Count  int       `json:"count"`
+	Change float64   `json:"change_percent"`
+}
+
+type TechMetric struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
+type PopularTechnology struct {
+	Name         string `json:"name"`
+	UsageCount   int    `json:"usage_count"`
+	ProjectCount int    `json:"project_count"`
+}
+
+type PopularTag struct {
+	Name         string `json:"name"`
+	UsageCount   int    `json:"usage_count"`
+	ProjectCount int    `json:"project_count"`
+}
+
+type PlatformAnalytics struct {
+	TotalProjects        int                 `json:"total_projects"`
+	TotalViews           int                 `json:"total_views"`
+	TotalLikes           int                 `json:"total_likes"`
+	PopularTechs         []PopularTechnology `json:"popular_technologies"`
+	PopularTags          []PopularTag        `json:"popular_tags"`
+	TopProjects          []TrendingProject   `json:"top_projects"`
+	CategoryDistribution []CategoryMetric    `json:"category_distribution"`
+}
+
+type CategoryMetric struct {
+	Category     string  `json:"category"`
+	ProjectCount int     `json:"project_count"`
+	Percentage   float64 `json:"percentage"`
+}
+
+// ========== NOTIFICATIONS ==========
+
+type Notification struct {
+	ID          uint      `json:"id"`
+	UserID      uint      `json:"user_id"`
+	Type        string    `json:"type"` // like, comment, follow, milestone
+	Title       string    `json:"title"`
+	Message     string    `json:"message"`
+	ProjectID   uint      `json:"project_id"`
+	TriggeredBy uint      `json:"triggered_by"`
+	IsRead      bool      `json:"is_read"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type NotificationResponse struct {
+	ID          uint        `json:"id"`
+	Type        string      `json:"type"`
+	Title       string      `json:"title"`
+	Message     string      `json:"message"`
+	ProjectID   uint        `json:"project_id"`
+	TriggeredBy Contributor `json:"triggered_by"`
+	IsRead      bool        `json:"is_read"`
+	CreatedAt   time.Time   `json:"created_at"`
+}
+
+type NotificationCreate struct {
+	Type      string `json:"type" binding:"required"`
+	Title     string `json:"title" binding:"required"`
+	Message   string `json:"message" binding:"required"`
+	ProjectID uint   `json:"project_id"`
+}
+
+// ========== PROJECT TEMPLATES ==========
+
+type ProjectTemplate struct {
+	ID             uint          `json:"id"`
+	Name           string        `json:"name"`
+	Description    string        `json:"description"`
+	Image          *string       `json:"image"`
+	CreatorID      uint          `json:"creator_id"`
+	CreatorDetails Contributor   `json:"creator_details,omitempty"`
+	Technologies   *[]Technology `json:"technologies,omitempty"`
+	Tags           *[]Tag        `json:"tags,omitempty"`
+	Category       string        `json:"category"`
+	IsPublic       bool          `json:"is_public"`
+	UsageCount     int           `json:"usage_count"`
+	CreatedAt      time.Time     `json:"created_at"`
+	UpdatedAt      time.Time     `json:"updated_at"`
+}
+
+type TemplateCreate struct {
+	ProjectID   uint   `json:"project_id" binding:"required"`
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description" binding:"required"`
+	IsPublic    bool   `json:"is_public"`
+}
+
+type TemplateListItem struct {
+	ID             uint        `json:"id"`
+	Name           string      `json:"name"`
+	Description    string      `json:"description"`
+	Image          *string     `json:"image"`
+	Category       string      `json:"category"`
+	UsageCount     int         `json:"usage_count"`
+	CreatorDetails Contributor `json:"creator_details,omitempty"`
+	CreatedAt      time.Time   `json:"created_at"`
+}
+
+type CreateFromTemplate struct {
+	TemplateID  uint   `json:"template_id" binding:"required"`
+	Title       string `json:"title" binding:"required"`
+	Description string `json:"description"`
+	GithubLink  string `json:"github_link"`
+}
+
+// ========== EXPORT ==========
+
+type ExportFormat string
+
+const (
+	ExportJSON ExportFormat = "json"
+	ExportPDF  ExportFormat = "pdf"
+)
+
+type ExportRequest struct {
+	Format       ExportFormat `json:"format" binding:"required,oneof=json pdf"`
+	IncludeStats bool         `json:"include_stats"`
+}
+
+type ProjectExportData struct {
+	Project      ProjectResponse   `json:"project"`
+	Statistics   *ProjectStats     `json:"statistics,omitempty"`
+	Comments     []CommentResponse `json:"comments,omitempty"`
+	Reviews      []ReviewResponse  `json:"reviews,omitempty"`
+	ExportedAt   time.Time         `json:"exported_at"`
+	ExportFormat string            `json:"export_format"`
+}
+
+type PortfolioExport struct {
+	ExportDate    time.Time          `json:"export_date"`
+	TotalProjects int                `json:"total_projects"`
+	Projects      []ProjectResponse  `json:"projects"`
+	Statistics    *PlatformAnalytics `json:"statistics,omitempty"`
+}
+
+// ========== COMMENT & REVIEW ==========
+
+type CommentCreate struct {
+	ProjectID uint   `json:"project_id" binding:"required"`
+	Content   string `json:"content" binding:"required"`
+}
+
+type CommentResponse struct {
+	ID        uint        `json:"id"`
+	ProjectID uint        `json:"project_id"`
+	Content   string      `json:"content"`
+	User      Contributor `json:"user"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
+type ReviewCreate struct {
+	ProjectID uint    `json:"project_id" binding:"required"`
+	Rating    float64 `json:"rating" binding:"required,min=1,max=5"`
+	Comment   string  `json:"comment"`
+}
+
+type ReviewResponse struct {
+	ID        uint        `json:"id"`
+	ProjectID uint        `json:"project_id"`
+	Rating    float64     `json:"rating"`
+	Comment   string      `json:"comment"`
+	User      Contributor `json:"user"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
+type ProjectStats struct {
+	ViewCount     int     `json:"view_count"`
+	LikeCount     int     `json:"like_count"`
+	CommentCount  int     `json:"comment_count"`
+	ReviewCount   int     `json:"review_count"`
+	AverageRating float64 `json:"average_rating"`
+}
