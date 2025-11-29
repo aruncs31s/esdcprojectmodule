@@ -21,65 +21,16 @@ type ProjectRepository interface {
 // - error - An error if the creation fails.
 
 type ProjectRepositoryReader interface {
-	// Used By Public Routes and Homepage
-	// GetPublicProjects retrieves public projects with pagination.
-	//
-	// It fetches projects that are marked as public (visibility = 0).
-	//
-	// Params:
-	//   - limit: int - The maximum number of projects to retrieve.
-	//   - offset: int - The number of projects to skip before starting to collect the result set.
-	//
-	// Returns:
-	//   - []commonModules.Project: A slice of Project containing the public projects.
-	//   - error: An error object if any error occurs during the database operation.
 	GetPublicProjects(limit, offset int) ([]model.Project, error)
-
-	// GetUserProjects retrieves projects associated with a specific user with pagination.
-	//
-	// It fetches projects created by the user or public projects.
-	//
-	// Params:
-	//   - userID: uint - The ID of the user whose projects are to be retrieved.
-	//   - limit: int - The maximum number of projects to retrieve.
-	//   - offset: int - The number of projects to skip before starting to collect the result set.
-	//
-	// Returns:
-	//   - []commonModules.Project: A slice of Project containing the user's projects.
-	//   - error: An error object if any error occurs during the database operation.
-	//
-	// Used By:
-	// My Projects Page.
 	GetUserProjects(userID uint, limit, offset int) ([]model.Project, error)
-	// Warning Only For Admin , because it fetches all projects including private ones
-	// GetEssentialInfo retrieves essential information of projects with pagination.
-	//
-	// It selects only the essential fields defined in the Project model.
-	//
-	// Params:
-	//   - limit: int - The maximum number of projects to retrieve.
-	//   - offset: int - The number of projects to skip before starting to collect the result set.
-	//
-	// Returns:
-	//   - []dto.ProjectsEssentialInfo: A slice of ProjectsEssentialInfo containing the essential project data.
-	//   - error: An error object if any error occurs during the database operation.
-	//
-	// Used By:
-	// Used By Admin.
 	GetEssentialInfo(limit, offset int) (*[]model.Project, error)
 	GetByID(id uint) (model.Project, error)
-	//
 	GetProjectsCount() (int, error)
-	// IsLiked checks if a project is liked by a user.
-	//
-	// Params:
-	//   - userID: uint - The ID of the user.
-	//   - projectID: int - The ID of the project.
-	//
-	// Returns:
-	//   - bool: True if the project is liked by the user, false otherwise.
-	//   - error: An error object if any error occurs during the database operation.
 	IsLiked(userID uint, projectID uint) (bool, error)
+	FilterProjects(category, status, visibility, search string, technologies []string, limit, offset int) ([]model.Project, int, error)
+	GetProjectStats(projectID uint) (*model.ProjectStats, error)
+	GetComments(projectID uint, limit, offset int) ([]model.Comment, error)
+	GetReviews(projectID uint, limit, offset int) ([]model.Review, error)
 }
 type ProjectRepositoryMixed interface {
 	// FindOrCreateTag finds a tag by name or creates it if it doesn't exist.
@@ -102,16 +53,14 @@ type ProjectRepositoryMixed interface {
 	FindOrCreateTechnology(name string) (*model.Technologies, error)
 }
 type ProjectRepositoryWriter interface {
-	// Create creates a new project in the database.
-	//
-	// Params:
-	//   - project: *commonModules.Project - A pointer to the Project object to be created.
-	//
-	// Returns:
-	//   - error: An error object if any error occurs during the database operation.
 	Create(project *model.Project) error
-	// LikeProject adds a like from a user to a project.
-
+	Update(projectID uint, updates map[string]interface{}) error
+	Delete(projectID uint, soft bool) error
 	LikeProject(userID uint, projectID uint) error
 	UnlikeProject(userID uint, projectID uint) error
+	IncrementViewCount(projectID uint) error
+	CreateComment(comment *model.Comment) error
+	CreateReview(review *model.Review) error
+	DeleteComment(commentID uint) error
+	UpdateCommentStatus(commentID uint, status string) error
 }

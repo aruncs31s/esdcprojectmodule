@@ -56,3 +56,15 @@ func RegisterPublicProjectRoutes() {
 func RegisterPrivateProjectRoutes(r *gin.Engine) {
 	routes.RegisterPrivateProjectRoutes(r, projectInstance.projectHandler)
 }
+
+// RegisterAdminProjectRoutes registers the admin project routes with the Gin engine.
+//
+// It sets up the routes that require admin authentication.
+//
+// Params:
+// - r: *gin.Engine - The Gin engine to register routes on.
+//
+// Note: Only Use this after enabling admin middleware on the routes.
+func RegisterAdminProjectRoutes(r *gin.Engine) {
+	routes.RegisterAdminProjectRoutes(r, projectInstance.projectHandler)
+}

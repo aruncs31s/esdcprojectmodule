@@ -85,6 +85,50 @@ func (r *projectRepository) FindOrCreateTechnology(name string) (*commonModules.
 	return r.mixed.FindOrCreateTechnology(name)
 }
 
+func (r *projectRepository) FilterProjects(category, status, visibility, search string, technologies []string, limit, offset int) ([]commonModules.Project, int, error) {
+	return r.reader.FilterProjects(category, status, visibility, search, technologies, limit, offset)
+}
+
+func (r *projectRepository) GetProjectStats(projectID uint) (*commonModules.ProjectStats, error) {
+	return r.reader.GetProjectStats(projectID)
+}
+
+func (r *projectRepository) GetComments(projectID uint, limit, offset int) ([]commonModules.Comment, error) {
+	return r.reader.GetComments(projectID, limit, offset)
+}
+
+func (r *projectRepository) GetReviews(projectID uint, limit, offset int) ([]commonModules.Review, error) {
+	return r.reader.GetReviews(projectID, limit, offset)
+}
+
+func (r *projectRepository) Update(projectID uint, updates map[string]interface{}) error {
+	return r.writer.Update(projectID, updates)
+}
+
+func (r *projectRepository) Delete(projectID uint, soft bool) error {
+	return r.writer.Delete(projectID, soft)
+}
+
+func (r *projectRepository) IncrementViewCount(projectID uint) error {
+	return r.writer.IncrementViewCount(projectID)
+}
+
+func (r *projectRepository) CreateComment(comment *commonModules.Comment) error {
+	return r.writer.CreateComment(comment)
+}
+
+func (r *projectRepository) CreateReview(review *commonModules.Review) error {
+	return r.writer.CreateReview(review)
+}
+
+func (r *projectRepository) DeleteComment(commentID uint) error {
+	return r.writer.DeleteComment(commentID)
+}
+
+func (r *projectRepository) UpdateCommentStatus(commentID uint, status string) error {
+	return r.writer.UpdateCommentStatus(commentID, status)
+}
+
 func (r *projectRepositoryReader) GetPublicProjects(limit, offset int) ([]commonModules.Project, error) {
 	var projects []commonModules.Project
 	if err := r.db.
@@ -200,4 +244,106 @@ func (r *projectRepositoryMixed) FindOrCreateTechnology(name string) (*commonMod
 		return nil, err
 	}
 	return &tech, nil
+}
+
+func (r *projectRepositoryReader) FilterProjects(category, status, visibility, search string, technologies []string, limit, offset int) ([]commonModules.Project, int, error) {
+	query := r.db.Model(&commonModules.Project{}).Preload("Contributors").Preload("Creator").Preload("Tags").Preload("Technologies")
+
+	if category != "" {
+		query = query.Where("category = ?", category)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if visibility != "" {
+		query = query.Where("visibility = ?", visibility)
+	}
+	if search != "" {
+		query = query.Where("title LIKE ? OR description LIKE ?", "%"+search+"%", "%"+search+"%")
+	}
+	if len(technologies) > 0 {
+		query = query.Joins("JOIN project_technologies ON projects.id = project_technologies.project_id").
+			Joins("JOIN technologies ON project_technologies.technology_id = technologies.id").
+			Where("technologies.name IN ?", technologies)
+	}
+
+	var total int64
+	query.Count(&total)
+
+	var projects []commonModules.Project
+	err := query.Limit(limit).Offset(offset).Find(&projects).Error
+	return projects, int(total), err
+}
+
+func (r *projectRepositoryReader) GetProjectStats(projectID uint) (*commonModules.ProjectStats, error) {
+	var stats commonModules.ProjectStats
+	var project commonModules.Project
+
+	if err := r.db.First(&project, projectID).Error; err != nil {
+		return nil, err
+	}
+
+	var commentCount, reviewCount int64
+	var avgRating float64
+
+	r.db.Model(&commonModules.Comment{}).Where("project_id = ?", projectID).Count(&commentCount)
+	r.db.Model(&commonModules.Review{}).Where("project_id = ?", projectID).Count(&reviewCount)
+	r.db.Model(&commonModules.Review{}).Where("project_id = ?", projectID).Select("AVG(rating)").Scan(&avgRating)
+
+	stats.ViewCount = project.Views
+	stats.LikeCount = project.Likes
+	stats.CommentCount = int(commentCount)
+	stats.ReviewCount = int(reviewCount)
+	stats.AverageRating = avgRating
+
+	return &stats, nil
+}
+
+func (r *projectRepositoryReader) GetComments(projectID uint, limit, offset int) ([]commonModules.Comment, error) {
+	var comments []commonModules.Comment
+	err := r.db.Preload("User").Where("project_id = ?", projectID).Limit(limit).Offset(offset).Order("created_at DESC").Find(&comments).Error
+	return comments, err
+}
+
+func (r *projectRepositoryReader) GetReviews(projectID uint, limit, offset int) ([]commonModules.Review, error) {
+	var reviews []commonModules.Review
+	err := r.db.Preload("User").Where("project_id = ?", projectID).Limit(limit).Offset(offset).Order("created_at DESC").Find(&reviews).Error
+	return reviews, err
+}
+
+func (r *projectRepositoryWriter) Update(projectID uint, updates map[string]interface{}) error {
+	return r.db.Model(&commonModules.Project{}).Where("id = ?", projectID).Updates(updates).Error
+}
+
+func (r *projectRepositoryWriter) Delete(projectID uint, soft bool) error {
+	if soft {
+		return r.db.Delete(&commonModules.Project{}, projectID).Error
+	}
+	return r.db.Unscoped().Delete(&commonModules.Project{}, projectID).Error
+}
+
+func (r *projectRepositoryWriter) IncrementViewCount(projectID uint) error {
+	return r.db.Model(&commonModules.Project{}).Where("id = ?", projectID).Update("views", gorm.Expr("views + ?", 1)).Error
+}
+
+func (r *projectRepositoryWriter) CreateComment(comment *commonModules.Comment) error {
+	return r.db.Create(comment).Error
+}
+
+func (r *projectRepositoryWriter) CreateReview(review *commonModules.Review) error {
+	return r.db.Create(review).Error
+}
+
+func (r *projectRepositoryWriter) DeleteComment(commentID uint) error {
+	return r.db.Delete(&commonModules.Comment{}, commentID).Error
+}
+
+func (r *projectRepositoryWriter) UpdateCommentStatus(commentID uint, status string) error {
+	return r.db.Model(&commonModules.Comment{}).Where("id = ?", commentID).Update("status", status).Error
+}
+
+func (r *projectRepositoryReader) GetEssentialInfo(limit, offset int) (*[]commonModules.Project, error) {
+	var projects []commonModules.Project
+	err := r.db.Limit(limit).Offset(offset).Find(&projects).Error
+	return &projects, err
 }
