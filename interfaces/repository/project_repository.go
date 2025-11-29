@@ -2,6 +2,7 @@ package repository
 
 import (
 	model "github.com/aruncs31s/esdcmodels"
+	"github.com/aruncs31s/esdcprojectmodule/dto"
 )
 
 type ProjectRepository interface {
@@ -28,16 +29,16 @@ type ProjectRepositoryReader interface {
 	GetProjectsCount() (int, error)
 	IsLiked(userID uint, projectID uint) (bool, error)
 	FilterProjects(category, status, visibility, search string, technologies []string, limit, offset int) ([]model.Project, int, error)
-	GetProjectStats(projectID uint) (*model.ProjectStats, error)
-	GetComments(projectID uint, limit, offset int) ([]model.Comment, error)
-	GetReviews(projectID uint, limit, offset int) ([]model.Review, error)
+	GetProjectStats(projectID uint) (*dto.ProjectStats, error)
+	GetComments(projectID uint, limit, offset int) ([]dto.CommentResponse, error)
+	GetReviews(projectID uint, limit, offset int) ([]dto.ReviewResponse, error)
 	// Trending & Recommendations
 	GetTrendingProjects(limit, offset int, days int) ([]model.Project, error)
 	GetRecommendedProjects(userID uint, limit, offset int) ([]model.Project, error)
 	GetSimilarProjects(projectID uint, limit, offset int) ([]model.Project, error)
 	// Analytics
-	GetProjectAnalytics(projectID uint, days int) (*model.ProjectAnalytics, error)
-	GetPlatformAnalytics(days int) (*model.PlatformAnalytics, error)
+	GetProjectAnalytics(projectID uint, days int) (*dto.ProjectStats, error)
+	GetPlatformAnalytics(days int) (*dto.PlatformAnalytics, error)
 	GetTrendingTechnologies(limit int) ([]model.TrendingTech, error)
 	GetTrendingTags(limit int) ([]model.TrendingTag, error)
 	// Templates
@@ -75,8 +76,8 @@ type ProjectRepositoryWriter interface {
 	LikeProject(userID uint, projectID uint) error
 	UnlikeProject(userID uint, projectID uint) error
 	IncrementViewCount(projectID uint) error
-	CreateComment(comment *model.Comment) error
-	CreateReview(review *model.Review) error
+	CreateComment(projectID, userID uint, content string) (*dto.CommentResponse, error)
+	CreateReview(projectID, userID uint, rating float64, comment string) (*dto.ReviewResponse, error)
 	DeleteComment(commentID uint) error
 	UpdateCommentStatus(commentID uint, status string) error
 	// Templates

@@ -2,6 +2,7 @@ package repository
 
 import (
 	commonModules "github.com/aruncs31s/esdcmodels"
+	"github.com/aruncs31s/esdcprojectmodule/dto"
 	"github.com/aruncs31s/esdcprojectmodule/interfaces/repository"
 
 	"gorm.io/gorm"
@@ -89,15 +90,15 @@ func (r *projectRepository) FilterProjects(category, status, visibility, search 
 	return r.reader.FilterProjects(category, status, visibility, search, technologies, limit, offset)
 }
 
-func (r *projectRepository) GetProjectStats(projectID uint) (*commonModules.ProjectStats, error) {
+func (r *projectRepository) GetProjectStats(projectID uint) (*dto.ProjectStats, error) {
 	return r.reader.GetProjectStats(projectID)
 }
 
-func (r *projectRepository) GetComments(projectID uint, limit, offset int) ([]commonModules.Comment, error) {
+func (r *projectRepository) GetComments(projectID uint, limit, offset int) ([]dto.CommentResponse, error) {
 	return r.reader.GetComments(projectID, limit, offset)
 }
 
-func (r *projectRepository) GetReviews(projectID uint, limit, offset int) ([]commonModules.Review, error) {
+func (r *projectRepository) GetReviews(projectID uint, limit, offset int) ([]dto.ReviewResponse, error) {
 	return r.reader.GetReviews(projectID, limit, offset)
 }
 
@@ -113,12 +114,12 @@ func (r *projectRepository) IncrementViewCount(projectID uint) error {
 	return r.writer.IncrementViewCount(projectID)
 }
 
-func (r *projectRepository) CreateComment(comment *commonModules.Comment) error {
-	return r.writer.CreateComment(comment)
+func (r *projectRepository) CreateComment(projectID, userID uint, content string) (*dto.CommentResponse, error) {
+	return r.writer.CreateComment(projectID, userID, content)
 }
 
-func (r *projectRepository) CreateReview(review *commonModules.Review) error {
-	return r.writer.CreateReview(review)
+func (r *projectRepository) CreateReview(projectID, userID uint, rating float64, comment string) (*dto.ReviewResponse, error) {
+	return r.writer.CreateReview(projectID, userID, rating, comment)
 }
 
 func (r *projectRepository) DeleteComment(commentID uint) error {
@@ -275,8 +276,8 @@ func (r *projectRepositoryReader) FilterProjects(category, status, visibility, s
 	return projects, int(total), err
 }
 
-func (r *projectRepositoryReader) GetProjectStats(projectID uint) (*commonModules.ProjectStats, error) {
-	var stats commonModules.ProjectStats
+func (r *projectRepositoryReader) GetProjectStats(projectID uint) (*dto.ProjectStats, error) {
+	var stats dto.ProjectStats
 	var project commonModules.Project
 
 	if err := r.db.First(&project, projectID).Error; err != nil {
@@ -286,9 +287,12 @@ func (r *projectRepositoryReader) GetProjectStats(projectID uint) (*commonModule
 	var commentCount, reviewCount int64
 	var avgRating float64
 
-	r.db.Model(&commonModules.Comment{}).Where("project_id = ?", projectID).Count(&commentCount)
-	r.db.Model(&commonModules.Review{}).Where("project_id = ?", projectID).Count(&reviewCount)
-	r.db.Model(&commonModules.Review{}).Where("project_id = ?", projectID).Select("AVG(rating)").Scan(&avgRating)
+	// Count comments from project_comments table
+	r.db.Table("project_comments").Where("project_id = ?", projectID).Count(&commentCount)
+	// Count reviews from project_reviews table
+	r.db.Table("project_reviews").Where("project_id = ?", projectID).Count(&reviewCount)
+	// Get average rating
+	r.db.Table("project_reviews").Where("project_id = ?", projectID).Select("COALESCE(AVG(rating), 0)").Scan(&avgRating)
 
 	stats.ViewCount = project.Views
 	stats.LikeCount = project.Likes
@@ -299,15 +303,29 @@ func (r *projectRepositoryReader) GetProjectStats(projectID uint) (*commonModule
 	return &stats, nil
 }
 
-func (r *projectRepositoryReader) GetComments(projectID uint, limit, offset int) ([]commonModules.Comment, error) {
-	var comments []commonModules.Comment
-	err := r.db.Preload("User").Where("project_id = ?", projectID).Limit(limit).Offset(offset).Order("created_at DESC").Find(&comments).Error
+func (r *projectRepositoryReader) GetComments(projectID uint, limit, offset int) ([]dto.CommentResponse, error) {
+	var comments []dto.CommentResponse
+	// Query directly from project_comments table and join with users
+	err := r.db.Table("project_comments").
+		Select("project_comments.id, project_comments.project_id, project_comments.content, project_comments.created_at, users.id as user_id, users.name as user_name, users.email as user_email, users.image as user_image").
+		Joins("LEFT JOIN users ON project_comments.user_id = users.id").
+		Where("project_comments.project_id = ?", projectID).
+		Limit(limit).Offset(offset).
+		Order("project_comments.created_at DESC").
+		Scan(&comments).Error
 	return comments, err
 }
 
-func (r *projectRepositoryReader) GetReviews(projectID uint, limit, offset int) ([]commonModules.Review, error) {
-	var reviews []commonModules.Review
-	err := r.db.Preload("User").Where("project_id = ?", projectID).Limit(limit).Offset(offset).Order("created_at DESC").Find(&reviews).Error
+func (r *projectRepositoryReader) GetReviews(projectID uint, limit, offset int) ([]dto.ReviewResponse, error) {
+	var reviews []dto.ReviewResponse
+	// Query directly from project_reviews table and join with users
+	err := r.db.Table("project_reviews").
+		Select("project_reviews.id, project_reviews.project_id, project_reviews.rating, project_reviews.comment, project_reviews.created_at, users.id as user_id, users.name as user_name, users.email as user_email, users.image as user_image").
+		Joins("LEFT JOIN users ON project_reviews.user_id = users.id").
+		Where("project_reviews.project_id = ?", projectID).
+		Limit(limit).Offset(offset).
+		Order("project_reviews.created_at DESC").
+		Scan(&reviews).Error
 	return reviews, err
 }
 
@@ -326,20 +344,46 @@ func (r *projectRepositoryWriter) IncrementViewCount(projectID uint) error {
 	return r.db.Model(&commonModules.Project{}).Where("id = ?", projectID).Update("views", gorm.Expr("views + ?", 1)).Error
 }
 
-func (r *projectRepositoryWriter) CreateComment(comment *commonModules.Comment) error {
-	return r.db.Create(comment).Error
+func (r *projectRepositoryWriter) CreateComment(projectID, userID uint, content string) (*dto.CommentResponse, error) {
+	// Insert into project_comments table
+	result := r.db.Exec("INSERT INTO project_comments (project_id, user_id, content, status, created_at, updated_at) VALUES (?, ?, ?, 'approved', NOW(), NOW())", projectID, userID, content)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	// Return the created comment response
+	var response dto.CommentResponse
+	r.db.Table("project_comments").
+		Select("project_comments.id, project_comments.project_id, project_comments.content, project_comments.created_at").
+		Where("project_comments.project_id = ? AND project_comments.user_id = ?", projectID, userID).
+		Order("project_comments.id DESC").
+		Limit(1).
+		Scan(&response)
+	return &response, nil
 }
 
-func (r *projectRepositoryWriter) CreateReview(review *commonModules.Review) error {
-	return r.db.Create(review).Error
+func (r *projectRepositoryWriter) CreateReview(projectID, userID uint, rating float64, comment string) (*dto.ReviewResponse, error) {
+	// Insert into project_reviews table
+	result := r.db.Exec("INSERT INTO project_reviews (project_id, user_id, rating, comment, created_at) VALUES (?, ?, ?, ?, NOW())", projectID, userID, rating, comment)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	// Return the created review response
+	var response dto.ReviewResponse
+	r.db.Table("project_reviews").
+		Select("project_reviews.id, project_reviews.project_id, project_reviews.rating, project_reviews.comment, project_reviews.created_at").
+		Where("project_reviews.project_id = ? AND project_reviews.user_id = ?", projectID, userID).
+		Order("project_reviews.id DESC").
+		Limit(1).
+		Scan(&response)
+	return &response, nil
 }
 
 func (r *projectRepositoryWriter) DeleteComment(commentID uint) error {
-	return r.db.Delete(&commonModules.Comment{}, commentID).Error
+	return r.db.Exec("DELETE FROM project_comments WHERE id = ?", commentID).Error
 }
 
 func (r *projectRepositoryWriter) UpdateCommentStatus(commentID uint, status string) error {
-	return r.db.Model(&commonModules.Comment{}).Where("id = ?", commentID).Update("status", status).Error
+	return r.db.Exec("UPDATE project_comments SET status = ? WHERE id = ?", status, commentID).Error
 }
 
 func (r *projectRepositoryReader) GetEssentialInfo(limit, offset int) (*[]commonModules.Project, error) {
@@ -362,11 +406,11 @@ func (r *projectRepository) GetSimilarProjects(projectID uint, limit, offset int
 	return r.reader.GetSimilarProjects(projectID, limit, offset)
 }
 
-func (r *projectRepository) GetProjectAnalytics(projectID uint, days int) (*commonModules.ProjectStats, error) {
+func (r *projectRepository) GetProjectAnalytics(projectID uint, days int) (*dto.ProjectStats, error) {
 	return r.reader.GetProjectAnalytics(projectID, days)
 }
 
-func (r *projectRepository) GetPlatformAnalytics(days int) (*commonModules.PlatformAnalytics, error) {
+func (r *projectRepository) GetPlatformAnalytics(days int) (*dto.PlatformAnalytics, error) {
 	return r.reader.GetPlatformAnalytics(days)
 }
 

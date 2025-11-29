@@ -360,7 +360,7 @@ func (s *projectService) GetNotifications(username string, limit, offset int) ([
 			CreatedAt: notif.CreatedAt,
 		}
 		if triggeredBy != nil {
-			response.TriggeredBy = utils.GetCreatorDetails(triggeredBy)
+			response.TriggeredBy = utils.GetCreatorDetails(*triggeredBy)
 		}
 		responses = append(responses, response)
 	}

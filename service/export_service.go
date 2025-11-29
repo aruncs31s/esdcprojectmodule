@@ -57,8 +57,14 @@ func (s *exportService) ExportProject(projectID uint, username string, format dt
 
 	// Build export data
 	exportData := dto.ProjectExportData{
-		Project:      *getProjectResponseForPersonal(project, false),
-		Statistics:   stats,
+		Project: *getProjectResponseForPersonal(project, false),
+		Statistics: &dto.ProjectStats{
+			ViewCount:     stats.ViewCount,
+			LikeCount:     stats.LikeCount,
+			CommentCount:  stats.CommentCount,
+			ReviewCount:   stats.ReviewCount,
+			AverageRating: stats.AverageRating,
+		},
 		ExportedAt:   time.Now(),
 		ExportFormat: string(format),
 	}
@@ -121,7 +127,7 @@ func (s *exportService) ExportPortfolio(username string, format dto.ExportFormat
 
 	if includeStats {
 		analytics, _ := s.projectRepo.GetPlatformAnalytics(30)
-		portfolio.Statistics = (*dto.PlatformAnalytics)(analytics)
+		portfolio.Statistics = analytics
 	}
 
 	switch format {

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	commonModules "github.com/aruncs31s/esdcmodels"
+	"github.com/aruncs31s/esdcprojectmodule/dto"
 )
 
 // GetTrendingProjects returns trending projects based on engagement metrics
@@ -97,8 +98,8 @@ func (r *projectRepositoryReader) GetSimilarProjects(projectID uint, limit, offs
 }
 
 // GetProjectAnalytics returns analytics for a specific project
-func (r *projectRepositoryReader) GetProjectAnalytics(projectID uint, days int) (*commonModules.ProjectStats, error) {
-	var stats commonModules.ProjectStats
+func (r *projectRepositoryReader) GetProjectAnalytics(projectID uint, days int) (*dto.ProjectStats, error) {
+	var stats dto.ProjectStats
 	var project commonModules.Project
 
 	if err := r.db.First(&project, projectID).Error; err != nil {
@@ -110,15 +111,15 @@ func (r *projectRepositoryReader) GetProjectAnalytics(projectID uint, days int) 
 	var commentCount, reviewCount int64
 	var avgRating float64
 
-	r.db.Model(&commonModules.Comment{}).
+	r.db.Table("project_comments").
 		Where("project_id = ? AND created_at >= ?", projectID, since).
 		Count(&commentCount)
 
-	r.db.Model(&commonModules.Review{}).
+	r.db.Table("project_reviews").
 		Where("project_id = ? AND created_at >= ?", projectID, since).
 		Count(&reviewCount)
 
-	r.db.Model(&commonModules.Review{}).
+	r.db.Table("project_reviews").
 		Where("project_id = ? AND created_at >= ?", projectID, since).
 		Select("COALESCE(AVG(rating), 0)").
 		Scan(&avgRating)
@@ -133,20 +134,25 @@ func (r *projectRepositoryReader) GetProjectAnalytics(projectID uint, days int) 
 }
 
 // GetPlatformAnalytics returns platform-wide analytics
-func (r *projectRepositoryReader) GetPlatformAnalytics(days int) (*commonModules.PlatformAnalytics, error) {
-	var analytics commonModules.PlatformAnalytics
+func (r *projectRepositoryReader) GetPlatformAnalytics(days int) (*dto.PlatformAnalytics, error) {
+	var analytics dto.PlatformAnalytics
 
 	since := time.Now().AddDate(0, 0, -days)
 
 	// Total projects
-	r.db.Model(&commonModules.Project{}).Count((*int64)(&analytics.TotalProjects))
+	var totalProjects int64
+	r.db.Model(&commonModules.Project{}).Count(&totalProjects)
+	analytics.TotalProjects = int(totalProjects)
 
 	// Total views and likes
+	var totalViews, totalLikes int
 	r.db.Model(&commonModules.Project{}).
 		Select("COALESCE(SUM(views), 0) as total_views, COALESCE(SUM(likes), 0) as total_likes").
 		Where("created_at >= ?", since).
 		Row().
-		Scan(&analytics.TotalViews, &analytics.TotalLikes)
+		Scan(&totalViews, &totalLikes)
+	analytics.TotalViews = totalViews
+	analytics.TotalLikes = totalLikes
 
 	return &analytics, nil
 }
