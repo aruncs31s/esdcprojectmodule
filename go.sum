@@ -1,9 +1,13 @@
 github.com/aruncs31s/esdcmodels v0.2.1 h1:qDmx+8Sa5B9wB+SOuU6kGEYeAWdkD8hBUqsQYpSF4QI=
 github.com/aruncs31s/esdcmodels v0.2.1/go.mod h1:9bztmkVgzI7ew5HN9F57h9nD6ph04t1qVLoWBKiAGWA=
+github.com/aruncs31s/esdcmodels v0.2.4 h1:2ndkzLn6P5HlaLfsxpI4HEDUl+9CXAQFgGUogJm1iik=
+github.com/aruncs31s/esdcmodels v0.2.4/go.mod h1:TI/CMs9DLsyWGtM6dkEHSq8XbdCwsOT1flRbSggCg4U=
 github.com/aruncs31s/esdcsharedhelpersmodule v0.1.7 h1:/riyjOHL6yHQ+jBXIrmN3FZarlF7GNEbJkyjD8vMgxQ=
 github.com/aruncs31s/esdcsharedhelpersmodule v0.1.7/go.mod h1:joTcUPcd/CxhYzMtRR+KAa+fNhFzdzBbLWd5aLLcA4w=
 github.com/aruncs31s/esdcusermodule v0.1.6 h1:rFgYitR6Jlpe80BWcocGASRXOzm7Y6cdoy828NBHREQ=
 github.com/aruncs31s/esdcusermodule v0.1.6/go.mod h1:9ReQLceR2tKuQ0ivmtSr5wc/Db/ydeR+HoSYG21x0Tk=
+github.com/aruncs31s/esdcusermodule v0.1.7 h1:ZHjZDOMgSh+vYB2Jrxdj/chrEBWCigb3bcgEBw0sJGk=
+github.com/aruncs31s/esdcusermodule v0.1.7/go.mod h1:sjqCtErdLgD/hLZvhwK/Mr16cS1hueUK+ujvVd0H4xA=
 github.com/aruncs31s/responsehelper v1.1.3 h1:KDyVZDJ88SXLfjFkL9vUDSEdCPUvH75WGhBpPqK2YyU=
 github.com/aruncs31s/responsehelper v1.1.3/go.mod h1:f+Ian4tb/ne1e5ADBAKXNKgMLsaoq59HG2lqOYMdhUg=
 github.com/bytedance/gopkg v0.1.3 h1:TPBSwH8RsouGCBcMBktLt1AymVo2TVsBVCY4b6TnZ/M=

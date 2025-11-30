@@ -3,9 +3,9 @@ module github.com/aruncs31s/esdcprojectmodule
 go 1.25.3
 
 require (
-	github.com/aruncs31s/esdcmodels v0.2.1
+	github.com/aruncs31s/esdcmodels v0.2.4
 	github.com/aruncs31s/esdcsharedhelpersmodule v0.1.7
-	github.com/aruncs31s/esdcusermodule v0.1.6
+	github.com/aruncs31s/esdcusermodule v0.1.7
 	github.com/aruncs31s/responsehelper v1.1.3
 	github.com/gin-gonic/gin v1.11.0
 	gorm.io/driver/sqlite v1.6.0
